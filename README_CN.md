@@ -52,9 +52,14 @@ docker-compose up -d
 | 变量 | 必需 | 默认值 | 描述 |
 |----------|----------|---------|-------------|
 | `OPENVPN_CONFIG_FILE` | 是 | `/config/config.ovpn` | 容器内 OpenVPN 配置路径 |
-| `OPENVPN_USERNAME` | 是* | - | OpenVPN 用户名（*如果提供商需要）|
-| `OPENVPN_PASSWORD` | 是* | - | OpenVPN 密码（*如果提供商需要）|
+| `OPENVPN_USERNAME` | 否 | - | OpenVPN 用户名（如需认证）|
+| `OPENVPN_PASSWORD` | 否 | - | OpenVPN 密码（如需认证）|
 | `SOCKS_PORT` | 否 | `18080` | SOCKS5 代理监听端口 |
+| `SOCKS5_USERNAME` | 否 | - | SOCKS5 代理用户名（客户端认证）|
+| `SOCKS5_PASSWORD` | 否 | - | SOCKS5 代理密码（客户端认证）|
+| `ENABLE_UDP` | 否 | `true` | 启用 UDP 中继支持 |
+| `USE_HOST_NETWORK` | 否 | `false` | 使用主机网络模式 |
+| `TZ` | 否 | `UTC` | 容器时区 |
 
 ### sing-box 配置
 

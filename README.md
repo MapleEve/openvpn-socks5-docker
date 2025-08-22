@@ -43,7 +43,7 @@ cp .env.example .env
 docker-compose up -d
 ```
 
-Your SOCKS5 proxy will be available at `127.0.0.1:1080`.
+Your SOCKS5 proxy will be available at `127.0.0.1:18080`.
 
 ## Configuration
 
@@ -52,9 +52,14 @@ Your SOCKS5 proxy will be available at `127.0.0.1:1080`.
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `OPENVPN_CONFIG_FILE` | Yes | `/config/config.ovpn` | Path to OpenVPN config inside container |
-| `OPENVPN_USERNAME` | Yes* | - | OpenVPN username (*if required by provider) |
-| `OPENVPN_PASSWORD` | Yes* | - | OpenVPN password (*if required by provider) |
-| `SOCKS_PORT` | No | `1080` | SOCKS5 proxy listening port |
+| `OPENVPN_USERNAME` | No | - | OpenVPN username (if auth required) |
+| `OPENVPN_PASSWORD` | No | - | OpenVPN password (if auth required) |
+| `SOCKS_PORT` | No | `18080` | SOCKS5 proxy listening port |
+| `SOCKS5_USERNAME` | No | - | SOCKS5 proxy username (for client auth) |
+| `SOCKS5_PASSWORD` | No | - | SOCKS5 proxy password (for client auth) |
+| `ENABLE_UDP` | No | `true` | Enable UDP relay support |
+| `USE_HOST_NETWORK` | No | `false` | Use host network mode |
+| `TZ` | No | `UTC` | Container timezone |
 
 ### sing-box Configuration
 
