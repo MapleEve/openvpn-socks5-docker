@@ -1,5 +1,7 @@
 # OpenVPN + SOCKS5 Proxy (sing-box branch)
 
+English | [中文](README_CN.md)
+
 A lightweight, Docker-based SOCKS5 proxy server using [sing-box](https://github.com/SagerNet/sing-box) that tunnels all traffic through an OpenVPN connection.
 
 ## Overview

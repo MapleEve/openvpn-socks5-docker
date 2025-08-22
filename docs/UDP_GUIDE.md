@@ -1,100 +1,226 @@
-# sing-box SOCKS5 UDP代理说明
+# SOCKS5 UDP Proxy Guide
 
-## UDP工作原理
+English | [中文](UDP_GUIDE_CN.md)
 
-sing-box的SOCKS5 UDP代理采用标准的SOCKS5 UDP ASSOCIATE机制：
+This guide explains how to use UDP traffic forwarding through the sing-box SOCKS5 proxy.
 
-1. **TCP控制连接**：客户端首先建立TCP连接到SOCKS5端口（默认18080）
-2. **UDP ASSOCIATE请求**：通过TCP连接发送UDP关联请求
-3. **动态端口分配**：sing-box动态分配一个UDP中继端口并返回给客户端
-4. **UDP数据传输**：客户端向分配的UDP端口发送封装的UDP数据包
+## UDP Support Overview
 
-## 端口配置
+sing-box provides full UDP proxy support through the SOCKS5 UDP ASSOCIATE mechanism. This allows UDP traffic (such as DNS queries, gaming traffic, VoIP) to be forwarded through the SOCKS5 proxy tunnel.
 
-### 当前配置
+## How It Works
+
+### SOCKS5 UDP ASSOCIATE Flow
+
+1. **Client Request**: Client sends UDP ASSOCIATE request to SOCKS5 server
+2. **Server Response**: Server allocates a UDP relay port and returns it to client
+3. **UDP Relay**: Client sends UDP packets to the relay port
+4. **Forwarding**: Server forwards UDP packets through the VPN tunnel
+
+### Port Range Configuration
+
+To support multiple concurrent UDP sessions, we use the Linux ephemeral port range:
+
 ```yaml
 ports:
-  - "18080:18080"       # SOCKS5 TCP控制端口
-  - "18080:18080/udp"   # SOCKS5 UDP（可选）
-  - "32768-60999:32768-60999/udp"  # Linux临时端口范围（UDP中继）
+  - "32768-60999:32768-60999/udp"  # Linux ephemeral port range
 ```
 
-### 重要说明
+This range is based on:
+- Linux default ephemeral ports: `/proc/sys/net/ipv4/ip_local_port_range`
+- Standard range: 32768-60999
+- Provides ~28,000 available ports for UDP relay
 
-- **sing-box v1.10.7不支持配置UDP端口范围**
-- UDP中继端口由Linux内核从临时端口范围动态分配
-- 端口分配不是1:1映射（不使用客户端请求的端口）
-- **Linux临时端口范围**: 32768-60999 （可通过 `/proc/sys/net/ipv4/ip_local_port_range` 查看）
+## Client Configuration
 
-## 网络模式选择
+### Using curl with UDP over SOCKS5
 
-### Bridge模式（当前）
-- 优点：网络隔离性好，安全
-- 缺点：需要端口映射，UDP端口可能无法预测
+```bash
+# DNS queries through SOCKS5 (use socks5h:// for remote DNS resolution)
+curl -x socks5h://username:password@127.0.0.1:18080 https://example.com
+```
 
-### Host模式（推荐用于生产环境）
-如果需要完整的UDP支持，建议使用host网络模式：
+### Application-Specific Configuration
+
+#### 1. Gaming Applications
+Many games use UDP for low-latency communication. Configure your game to use:
+- SOCKS5 Server: `127.0.0.1`
+- Port: `18080`
+- Enable UDP relay (if option available)
+
+#### 2. VoIP Applications (Discord, TeamSpeak)
+VoIP applications typically use UDP for voice traffic:
+- Configure SOCKS5 in the app's proxy settings
+- Ensure UDP option is enabled
+- Some apps may require additional STUN/TURN configuration
+
+#### 3. DNS Tools
+```bash
+# Using dig through SOCKS5 proxy
+# Note: dig doesn't natively support SOCKS5, use proxychains or similar
+proxychains dig @8.8.8.8 example.com
+```
+
+## Testing UDP Functionality
+
+### Basic UDP Testing
+
+1. **Check UDP Port Mapping**:
+```bash
+docker-compose ps
+# Verify UDP port range is mapped
+```
+
+2. **Test UDP Inside Container**:
+```bash
+# Enter the container
+docker-compose exec ovpn_singbox_proxy sh
+
+# Test UDP DNS query
+nslookup google.com 8.8.8.8
+
+# Check UDP traffic goes through tun0
+tcpdump -i tun0 -n udp
+```
+
+3. **Test UDP Proxy from Host**:
+```bash
+# Some applications that support SOCKS5 UDP
+# Example: UDP echo test with netcat
+echo "test" | nc -u -x 127.0.0.1:18080 example.com 7
+```
+
+### Advanced UDP Testing
+
+#### UDP Testing with Python
+```python
+import socks
+import socket
+
+# Configure SOCKS5 proxy
+socks.set_default_proxy(
+    socks.SOCKS5, 
+    "127.0.0.1", 
+    18080,
+    username="your_username",
+    password="your_password"
+)
+socket.socket = socks.socksocket
+
+# Create UDP socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+# Send UDP packet
+sock.sendto(b"Hello UDP", ("example.com", 7))
+```
+
+## Troubleshooting
+
+### Common UDP Issues
+
+#### 1. UDP Traffic Not Forwarded
+**Cause**: Client doesn't support SOCKS5 UDP ASSOCIATE  
+**Solution**: Use a client with proper SOCKS5 UDP support
+
+#### 2. UDP Ports Unreachable
+**Cause**: Docker port mapping incorrect  
+**Solution**: Verify UDP ports in docker-compose.yml:
+```yaml
+ports:
+  - "32768-60999:32768-60999/udp"
+```
+
+#### 3. High Latency in Games/VoIP
+**Cause**: UDP packets routed through TCP VPN tunnel  
+**Solution**:
+- Ensure OpenVPN uses `proto udp` not `proto tcp`
+- Check VPN server latency
+- Consider using a closer VPN server
+
+#### 4. DNS Resolution Failures
+**Cause**: DNS queries not going through proxy  
+**Solution**: Use `socks5h://` instead of `socks5://` for remote DNS resolution
+
+### Monitoring UDP Traffic
+
+```bash
+# Monitor UDP traffic in container
+docker-compose exec ovpn_singbox_proxy sh -c "tcpdump -i any -n udp"
+
+# Check sing-box UDP statistics
+docker-compose exec ovpn_singbox_proxy sh -c "netstat -anu"
+
+# View UDP relay ports
+docker-compose exec ovpn_singbox_proxy sh -c "ss -anu | grep 18080"
+```
+
+## Performance Optimization
+
+### UDP Buffer Sizes
+For high-throughput UDP applications, consider adjusting buffer sizes:
+
+```bash
+# Inside container
+sysctl -w net.core.rmem_default=262144
+sysctl -w net.core.wmem_default=262144
+```
+
+### Port Range Optimization
+If you need more concurrent UDP sessions, expand the port range:
 
 ```yaml
-# docker-compose.host.yml
+# docker-compose.yml
+ports:
+  - "20000-65000:20000-65000/udp"  # Extended range
+```
+
+## Security Considerations
+
+1. **Port Exposure**: Large UDP port ranges increase attack surface
+2. **Firewall Rules**: Consider restricting UDP port access to specific IPs
+3. **Rate Limiting**: Implement UDP rate limiting in production
+4. **Monitoring**: Regularly monitor for unusual UDP traffic patterns
+
+## Compatibility Notes
+
+### Supported Applications
+- ✅ Applications with native SOCKS5 UDP support
+- ✅ Applications using proxychains-ng
+- ✅ Applications supporting tun2socks
+
+### Limited Applications
+- ⚠️ TCP-only SOCKS5 clients
+- ⚠️ Applications with hardcoded DNS servers
+- ❌ Applications requiring raw sockets
+
+## Configuration Examples
+
+### Complete UDP-Enabled docker-compose.yml
+```yaml
 services:
   ovpn_singbox_proxy:
-    network_mode: host
+    ports:
+      - "18080:18080"       # SOCKS5 TCP
+      - "18080:18080/udp"   # SOCKS5 UDP
+      - "32768-60999:32768-60999/udp"  # UDP relay range
     environment:
-      - USE_HOST_NETWORK=true
-    # 不需要ports映射
+      - ENABLE_UDP=true
 ```
 
-## 测试结果
-
-### 功能测试 ✅
-- TCP代理：正常工作
-- UDP关联：成功建立
-- UDP数据传输：正常（DNS查询测试通过）
-- 认证机制：按配置正确工作
-
-### 端口分配测试
-```
-客户端请求端口: 42767
-服务器分配端口: 38940
-状态: 动态分配（非1:1映射）
-端口范围: 32768-60999 (Linux临时端口范围)
+### sing-box UDP Configuration
+Configuration in `conf/server.json` ensures UDP support:
+```json
+{
+  "inbounds": [{
+    "type": "socks",
+    "listen": "::",
+    "listen_port": 18080,
+    "udp_enable": true,
+    "udp_timeout": 300
+  }]
+}
 ```
 
-## 客户端配置示例
+---
 
-### Python SOCKS5 UDP客户端
-```python
-# 1. 建立TCP控制连接
-tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-tcp_sock.connect(("proxy_host", 18080))
-
-# 2. SOCKS5握手和认证
-# ...
-
-# 3. 发送UDP ASSOCIATE请求
-request = b'\x05\x03\x00\x01'  # UDP关联
-request += socket.inet_aton('0.0.0.0')
-request += struct.pack('>H', 0)
-tcp_sock.send(request)
-
-# 4. 获取分配的UDP中继地址
-response = tcp_sock.recv(10)
-# 解析response获取UDP中继地址和端口
-
-# 5. 向中继端口发送UDP数据
-udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-udp_sock.sendto(udp_packet, (relay_addr, relay_port))
-```
-
-## 建议
-
-1. **开发环境**：使用bridge模式，接受动态端口分配
-2. **生产环境**：考虑使用host网络模式避免端口映射问题
-3. **防火墙配置**：开放Linux临时端口范围（32768-60999）用于UDP中继
-
-## 已知限制
-
-- sing-box当前版本不支持配置固定的UDP端口范围
-- UDP端口不能保证1:1映射
-- 在NAT环境下可能需要额外配置
+For more advanced configuration and troubleshooting, refer to the [sing-box documentation](https://sing-box.sagernet.org/).
