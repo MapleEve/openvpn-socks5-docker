@@ -1,0 +1,84 @@
+{
+  "log": {
+    "level": "info",
+    "output": "/logs/sing-box.log",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "google",
+        "address": "8.8.8.8",
+        "strategy": "prefer_ipv4"
+      }
+    ],
+    "rules": [
+      {
+        "outbound": "any",
+        "server": "google"
+      }
+    ],
+    "strategy": "prefer_ipv4"
+  },
+  "inbounds": [
+    {
+      "type": "socks",
+      "tag": "socks-in",
+      "listen": "0.0.0.0",
+      "listen_port": 18080,
+      "tcp_fast_open": false,
+      "tcp_multi_path": false,
+      "udp_fragment": true,
+      "udp_timeout": "5m",
+      "sniff": true,
+      "sniff_override_destination": true,
+      "domain_strategy": "prefer_ipv4",
+      "users": []
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "protocol": "dns",
+        "outbound": "direct"
+      },
+      {
+        "network": "udp",
+        "port": 53,
+        "outbound": "direct"
+      }
+    ],
+    "final": "direct",
+    "auto_detect_interface": true,
+    "override_android_vpn": false
+  },
+  "experimental": {
+    "cache_file": {
+      "enabled": false
+    },
+    "clash_api": {
+      "external_controller": "",
+      "external_ui": "",
+      "secret": "",
+      "default_mode": "rule"
+    },
+    "v2ray_api": {
+      "listen": "",
+      "stats": {
+        "enabled": false,
+        "inbounds": [],
+        "outbounds": []
+      }
+    }
+  }
+}

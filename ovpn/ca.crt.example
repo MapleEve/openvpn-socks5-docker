@@ -1,0 +1,5 @@
+-----BEGIN CERTIFICATE-----
+[Replace this with your actual CA certificate content]
+This is an example file - you need to replace this with your actual
+OpenVPN certificate authority file provided by your VPN provider.
+-----END CERTIFICATE-----

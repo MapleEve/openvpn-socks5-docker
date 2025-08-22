@@ -1,0 +1,46 @@
+# Environment files
+.env
+*.env
+!.env.example
+
+# OpenVPN configuration files (sensitive)
+ovpn/*.ovpn
+ovpn/*.crt
+ovpn/*.key
+!ovpn/*.example
+
+# Log files
+logs/
+*.log
+
+# Temporary files
+test/
+tmp/
+temp/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Runtime files
+*.pid
+
+# AI tool cache
+.serena/
+.claude/
+CLAUDE.md

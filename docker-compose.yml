@@ -1,0 +1,58 @@
+version: "3.8"
+
+# Bridge network configuration for sing-box implementation
+# Uses custom network 172.20.0.0/24 to avoid FakeIP DNS conflicts
+
+networks:
+  openvpn-bridge:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1
+
+services:
+  ovpn_singbox_proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ovpn-singbox-proxy
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    privileged: false
+    networks:
+      openvpn-bridge:
+        ipv4_address: 172.20.0.10
+    volumes:
+      - ./ovpn/:/config:ro
+      - ./logs:/logs
+    environment:
+      # OpenVPN configuration
+      - OPENVPN_CONFIG_FILE=${OPENVPN_CONFIG_FILE:-/config/config.ovpn}
+      - OPENVPN_USERNAME=${OPENVPN_USERNAME:-}
+      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD:-}
+      # SOCKS5 configuration  
+      - SOCKS_PORT=18080
+      - SOCKS5_USERNAME=${SOCKS5_USERNAME:-}
+      - SOCKS5_PASSWORD=${SOCKS5_PASSWORD:-}
+      # Features
+      - ENABLE_UDP=true
+      - USE_HOST_NETWORK=false
+      # Timezone
+      - TZ=UTC
+    ports:
+      - "18080:18080"       # SOCKS5 TCP控制端口
+      - "18080:18080/udp"   # SOCKS5 UDP（如果需要）
+      - "32768-60999:32768-60999/udp"  # Linux临时端口范围（UDP中继）
+    healthcheck:
+      test: ["CMD", "netstat", "-tlnp", "|", "grep", ":18080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
