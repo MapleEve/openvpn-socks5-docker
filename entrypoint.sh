@@ -29,6 +29,12 @@ info() {
 mkdir -p /logs
 echo "Sing-box OpenVPN SOCKS5 Proxy - $(date)" > /logs/entrypoint.log
 
+# Force host network mode when UDP is enabled
+if [ "$ENABLE_UDP" = "true" ] && [ "$USE_HOST_NETWORK" != "true" ]; then
+    warn "UDP support requires host network mode. Forcing USE_HOST_NETWORK=true"
+    export USE_HOST_NETWORK="true"
+fi
+
 # Check if OpenVPN config file exists
 if [ ! -f "$OPENVPN_CONFIG_FILE" ]; then
     error "OpenVPN config file not found: $OPENVPN_CONFIG_FILE"

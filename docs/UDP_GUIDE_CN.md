@@ -4,6 +4,8 @@
 
 本指南介绍如何通过 sing-box SOCKS5 代理使用 UDP 流量转发。
 
+> **⚠️ 重要提示**：UDP 支持需要主机网络模式。当设置 `ENABLE_UDP=true` 时，容器会自动强制启用 `USE_HOST_NETWORK=true` 以处理 UDP ASSOCIATE 所需的大范围 UDP 端口（32768-60999）。
+
 ## UDP 支持概述
 
 sing-box 通过 SOCKS5 UDP ASSOCIATE 机制提供完整的 UDP 代理支持。这允许 UDP 流量（如 DNS 查询、游戏流量、VoIP）通过 SOCKS5 代理隧道转发。

@@ -4,6 +4,8 @@ English | [中文](UDP_GUIDE_CN.md)
 
 This guide explains how to use UDP traffic forwarding through the sing-box SOCKS5 proxy.
 
+> **⚠️ Important**: UDP support requires host network mode. When `ENABLE_UDP=true` is set, the container automatically forces `USE_HOST_NETWORK=true` to handle the large UDP port range (32768-60999) required for UDP ASSOCIATE.
+
 ## UDP Support Overview
 
 sing-box provides full UDP proxy support through the SOCKS5 UDP ASSOCIATE mechanism. This allows UDP traffic (such as DNS queries, gaming traffic, VoIP) to be forwarded through the SOCKS5 proxy tunnel.

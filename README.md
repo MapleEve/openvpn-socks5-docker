@@ -36,12 +36,15 @@ cp .env.example .env
 # Edit .env with your VPN credentials
 ```
 
-### 3. Deploy with Bridge Network
+> **⚠️ Important**: When `ENABLE_UDP=true`, the container automatically forces `USE_HOST_NETWORK=true` because Docker bridge networks have limitations with large UDP port ranges (32768-60999)
+
+### 3. Deploy
 
 ```bash
-# Use the bridge network configuration to avoid DNS conflicts
 docker-compose up -d
 ```
+
+> The container will automatically use host network mode when `ENABLE_UDP=true`
 
 Your SOCKS5 proxy will be available at `127.0.0.1:18080`.
 
@@ -57,8 +60,8 @@ Your SOCKS5 proxy will be available at `127.0.0.1:18080`.
 | `SOCKS_PORT` | No | `18080` | SOCKS5 proxy listening port |
 | `SOCKS5_USERNAME` | No | - | SOCKS5 proxy username (for client auth) |
 | `SOCKS5_PASSWORD` | No | - | SOCKS5 proxy password (for client auth) |
-| `ENABLE_UDP` | No | `true` | Enable UDP relay support |
-| `USE_HOST_NETWORK` | No | `false` | Use host network mode |
+| `ENABLE_UDP` | No | `true` | Enable UDP relay support (forces host network mode) |
+| `USE_HOST_NETWORK` | No | `false` | Use host network mode (auto-enabled when UDP is on) |
 | `TZ` | No | `UTC` | Container timezone |
 
 ### sing-box Configuration

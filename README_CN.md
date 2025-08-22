@@ -36,12 +36,15 @@ cp .env.example .env
 # 编辑 .env 文件，填入您的 VPN 凭据
 ```
 
-### 3. 使用桥接网络部署
+> **⚠️ 重要提示**：当 `ENABLE_UDP=true` 时，容器会自动强制启用 `USE_HOST_NETWORK=true`，因为 Docker 桥接网络对大范围 UDP 端口映射（32768-60999）存在限制
+
+### 3. 部署
 
 ```bash
-# 使用桥接网络配置以避免 DNS 冲突
 docker-compose up -d
 ```
+
+> 当 `ENABLE_UDP=true` 时，容器会自动使用主机网络模式
 
 您的 SOCKS5 代理将在 `127.0.0.1:18080` 可用。
 
@@ -57,8 +60,8 @@ docker-compose up -d
 | `SOCKS_PORT` | 否 | `18080` | SOCKS5 代理监听端口 |
 | `SOCKS5_USERNAME` | 否 | - | SOCKS5 代理用户名（客户端认证）|
 | `SOCKS5_PASSWORD` | 否 | - | SOCKS5 代理密码（客户端认证）|
-| `ENABLE_UDP` | 否 | `true` | 启用 UDP 中继支持 |
-| `USE_HOST_NETWORK` | 否 | `false` | 使用主机网络模式 |
+| `ENABLE_UDP` | 否 | `true` | 启用 UDP 中继支持（强制主机网络模式）|
+| `USE_HOST_NETWORK` | 否 | `false` | 使用主机网络模式（UDP 启用时自动开启）|
 | `TZ` | 否 | `UTC` | 容器时区 |
 
 ### sing-box 配置
