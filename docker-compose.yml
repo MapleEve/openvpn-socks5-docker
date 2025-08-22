@@ -46,7 +46,7 @@ services:
     ports:
       - "18080:18080"       # SOCKS5 TCP控制端口
       - "18080:18080/udp"   # SOCKS5 UDP（如果需要）
-      - "32768-60999:32768-60999/udp"  # Linux临时端口范围（UDP中继）
+      # - "32768-60999:32768-60999/udp"  # Linux临时端口范围（UDP中继） - 注释掉避免端口冲突
     healthcheck:
       test: ["CMD", "netstat", "-tlnp", "|", "grep", ":18080"]
       interval: 30s

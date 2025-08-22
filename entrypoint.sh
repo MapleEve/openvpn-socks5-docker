@@ -74,7 +74,7 @@ preprocess_ovpn_config() {
     local original_config="$1"
     local processed_config="/tmp/processed_config.ovpn"
     
-    log "Preprocessing OpenVPN configuration..."
+    log "Preprocessing OpenVPN configuration..." >&2
     
     # Check if original config exists
     if [ ! -f "$original_config" ]; then
@@ -85,7 +85,7 @@ preprocess_ovpn_config() {
     # Start with original config
     cp "$original_config" "$processed_config"
     
-    log "Applying universal OpenVPN configuration fixes..."
+    log "Applying universal OpenVPN configuration fixes..." >&2
     
     # === DEPRECATED OPTIONS REMOVAL (based on official OpenVPN docs) ===
     # Remove/comment all deprecated options that generate warnings
@@ -129,13 +129,13 @@ preprocess_ovpn_config() {
     
     # Add missing essential log directives (only if completely missing)
     if ! grep -q "^status " "$processed_config"; then
-        log "Adding missing status log configuration"
+        log "Adding missing status log configuration" >&2
         echo "status /logs/openvpn-status.log" >> "$processed_config"
     fi
     
     # Add log directive only if no logging is configured at all
     if ! grep -q "^log " "$processed_config" && ! grep -q "^log-append " "$processed_config"; then
-        log "Adding missing log configuration"
+        log "Adding missing log configuration" >&2
         echo "log-append /logs/openvpn.log" >> "$processed_config"
     fi
     
@@ -184,7 +184,7 @@ preprocess_ovpn_config() {
     # === ESSENTIAL CLIENT DIRECTIVES (only add if missing) ===
     # These are required for proper client operation
     if ! grep -q "^client" "$processed_config"; then
-        log "Adding missing 'client' directive"
+        log "Adding missing 'client' directive" >&2
         echo "client" >> "$processed_config"
     fi
     
@@ -215,34 +215,34 @@ preprocess_ovpn_config() {
     # Warn about deprecated options but don't force changes that could break compatibility
     
     if grep -q "comp-lzo" "$original_config"; then
-        log "WARNING: comp-lzo is deprecated and pending removal. Consider removing it or using modern compression if server supports it"
+        log "WARNING: comp-lzo is deprecated and pending removal. Consider removing it or using modern compression if server supports it" >&2
     fi
     
     if grep -q "comp-noadapt" "$original_config"; then
-        log "WARNING: comp-noadapt is deprecated and pending removal"
+        log "WARNING: comp-noadapt is deprecated and pending removal" >&2
     fi
     
     if grep -q "compress" "$original_config"; then
-        log "WARNING: compress directive is deprecated and pending removal. OpenVPN 2.7+ will not compress data"
+        log "WARNING: compress directive is deprecated and pending removal. OpenVPN 2.7+ will not compress data" >&2
     fi
     
     if grep -q "ns-cert-type" "$original_config"; then
-        log "WARNING: ns-cert-type is deprecated. Use --remote-cert-tls instead"
+        log "WARNING: ns-cert-type is deprecated. Use --remote-cert-tls instead" >&2
     fi
     
     if grep -q "ncp-disable" "$original_config"; then
-        log "WARNING: ncp-disable is deprecated. Modern servers should support negotiable crypto"
+        log "WARNING: ncp-disable is deprecated. Modern servers should support negotiable crypto" >&2
     fi
     
     # Check for removed options that would cause startup failure
     removed_options="no-iv client-cert-not-required ifconfig-pool-linear key-method tls-remote compat-names no-name-remapping no-replay keysize"
     for option in $removed_options; do
         if grep -q "^$option" "$original_config"; then
-            log "ERROR: '$option' option has been removed in modern OpenVPN versions and will cause startup failure"
+            log "ERROR: '$option' option has been removed in modern OpenVPN versions and will cause startup failure" >&2
         fi
     done
     
-    log "OpenVPN configuration preprocessed successfully"
+    log "OpenVPN configuration preprocessed successfully" >&2
     echo "$processed_config"
     return 0
 }
